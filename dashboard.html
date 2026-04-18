@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINH HOÀNG CƠ ĐIỆN TỬ - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        :root { --primary-blue: #0052a5; --primary-orange: #ff6700; --success-green: #28a745; --danger-red: #dc3545; --light-text: #ffffff; --gray-text: #e0e0e0; --border-color: rgba(255, 103, 0, 0.3); }
+        body { background: linear-gradient(135deg, #0052a5 0%, #003d7a 100%); color: var(--light-text); min-height: 100vh; }
+        .header { background: rgba(0,0,0,0.3); padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); }
+        .header h1 { color: var(--primary-orange); font-size: 20px; }
+        .header a { color: var(--gray-text); text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; }
+        .header a:hover { background: var(--primary-orange); color: white; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 20px; }
+        .device-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px; }
+        .info-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; border: 1px solid var(--border-color); }
+        .info-card h3 { color: var(--primary-orange); margin-bottom: 20px; font-size: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: var(--gray-text); }
+        .info-row .value { color: var(--light-text); font-weight: 600; }
+        .status-online { color: var(--success-green) !important; }
+        .status-offline { color: var(--danger-red) !important; }
+        
+        .sensor-display { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px; }
+        .sensor-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; text-align: center; border: 1px solid var(--border-color); }
+        .sensor-card .icon { font-size: 48px; margin-bottom: 15px; }
+        .sensor-card .value { font-size: 36px; font-weight: 700; }
+        .sensor-card .label { color: var(--gray-text); margin-top: 10px; font-size: 14px; text-transform: uppercase; }
+        .sensor-card.temp .value { color: #ff6700; }
+        .sensor-card.humidity .value { color: #00bfff; }
+        
+        .data-list { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 15px; margin-top: 20px; border: 1px solid var(--border-color); }
+        .data-list h3 { color: var(--primary-orange); margin-bottom: 10px; font-size: 14px; }
+        .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; }
+        .data-row:last-child { border-bottom: none; }
+        .data-row .time { color: var(--gray-text); }
+        .data-row .temp { color: #ff6700; font-weight: 600; }
+        .data-row .humidity { color: #00bfff; font-weight: 600; }
+        @media (max-width: 768px) { .device-info, .sensor-display { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Dashboard - <span id="deviceName">Thiết bị</span></h1>
+        <a href="/index.html">← Quay lại</a>
+    </div>
+    <div class="container">
+        <div class="device-info">
+            <div class="info-card">
+                <h3>📱 Thông tin thiết bị</h3>
+                <div class="info-row"><span class="label">Tên thiết bị</span><span class="value" id="infoHostName">--</span></div>
+                <div class="info-row"><span class="label">Trạng thái</span><span class="value" id="infoStatus">--</span></div>
+                <div class="info-row"><span class="label">Firmware</span><span class="value" id="infoFirmware">--</span></div>
+                <div class="info-row"><span class="label">MAC Address</span><span class="value" id="infoMAC">--</span></div>
+            </div>
+            <div class="info-card">
+                <h3>🌐 Thông tin mạng</h3>
+                <div class="info-row"><span class="label">IP Address</span><span class="value" id="infoIP">--</span></div>
+                <div class="info-row"><span class="label">WiFi Signal</span><span class="value" id="infoRSSI">--</span></div>
+                <div class="info-row"><span class="label">Last Heartbeat</span><span class="value" id="infoHeartbeat">--</span></div>
+                <div class="info-row"><span class="label">Lệnh chờ</span><span class="value" id="infoCommand">--</span></div>
+            </div>
+        </div>
+        
+        <div class="sensor-display">
+            <div class="sensor-card temp">
+                <div class="icon">🌡️</div>
+                <div class="value" id="currentTemp">--</div>
+                <div class="label">Nhiệt độ (°C)</div>
+            </div>
+            <div class="sensor-card humidity">
+                <div class="icon">💧</div>
+                <div class="value" id="currentHumidity">--</div>
+                <div class="label">Độ ẩm (%)</div>
+            </div>
+        </div>
+
+        <div class="data-list" id="dataList">
+            <h3>📊 Dữ liệu cảm biến</h3>
+            <div style="margin-bottom:10px;display:flex;gap:10px">
+                <button onclick="exportExcel()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">📥 Tải Log</button>
+                <button onclick="clearLog()" style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">🗑️ Xóa Log</button>
+            </div>
+            <div id="dataListContent"></div>
+        </div>
+    </div>
+    <script>
+        function getDeviceFromURL() { return new URLSearchParams(window.location.search).get('device'); }
+        function getPasswordFromURL() { return new URLSearchParams(window.location.search).get('password'); }
+        
+        function loadDashboard() {
+            const device = getDeviceFromURL();
+            const password = getPasswordFromURL();
+            if (!device) { document.body.innerHTML = '<div style="padding:50px;text-align:center;color:#e0e0e0">Không tìm thấy thiết bị</div>'; return; }
+            
+            document.getElementById('deviceName').textContent = device;
+            
+            let url = '/device/' + encodeURIComponent(device);
+            if (password) url += '?password=' + encodeURIComponent(password);
+            
+            fetch(url)
+                .then(res => { if (!res.ok) throw new Error('Unauthorized'); return res.json(); })
+                .then(data => {
+                    document.getElementById('infoHostName').textContent = data.hostName;
+                    document.getElementById('infoStatus').textContent = data.online ? '🟢 Online' : '🔴 Offline';
+                    document.getElementById('infoStatus').className = 'value ' + (data.online ? 'status-online' : 'status-offline');
+                    document.getElementById('infoFirmware').textContent = data.firmwareVersion;
+                    document.getElementById('infoMAC').textContent = data.macAddress;
+                    document.getElementById('infoIP').textContent = data.ipAddress;
+                    document.getElementById('infoRSSI').textContent = data.wifiSignalStrength + ' dBm';
+                    document.getElementById('infoCommand').textContent = data.pendingCommand || 'Không có';
+                    
+                    if (data.lastHeartbeat) document.getElementById('infoHeartbeat').textContent = new Date(data.lastHeartbeat).toLocaleTimeString('vi-VN');
+                    
+                    if (data.latestSensor) {
+                        document.getElementById('currentTemp').textContent = data.latestSensor.temperature.toFixed(1);
+                        document.getElementById('currentHumidity').textContent = data.latestSensor.humidity.toFixed(1);
+                    }
+                })
+                .catch(() => { document.body.innerHTML = '<div style="padding:50px;text-align:center;color:#e0e0e0">Sai mật khẩu!</div>'; });
+            
+            fetch('/getChartData/' + encodeURIComponent(device) + '?limit=20')
+                .then(res => res.json()).then(data => showDataList(data));
+            
+            setInterval(() => {
+                let url = '/device/' + encodeURIComponent(device);
+                if (password) url += '?password=' + encodeURIComponent(password);
+                fetch(url).then(res => res.json()).then(data => {
+                    document.getElementById('infoStatus').textContent = data.online ? '🟢 Online' : '🔴 Offline';
+                    document.getElementById('infoStatus').className = 'value ' + (data.online ? 'status-online' : 'status-offline');
+                    if (data.latestSensor) {
+                        document.getElementById('currentTemp').textContent = data.latestSensor.temperature.toFixed(1);
+                        document.getElementById('currentHumidity').textContent = data.latestSensor.humidity.toFixed(1);
+                    }
+                });
+            }, 10000);
+        }
+        
+        function showDataList(data) {
+            const container = document.getElementById('dataListContent');
+            if (!data || data.length === 0) { container.innerHTML = '<div style="color:#e0e0e0;text-align:center">Chưa có dữ liệu</div>'; return; }
+            let html = '';
+            data.reverse().forEach(d => {
+                const time = new Date(d.timestamp * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                html += `<div class="data-row"><span class="time">${time}</span><span class="temp">${d.temperature.toFixed(1)}°C</span><span class="humidity">${d.humidity.toFixed(1)}%</span></div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function exportExcel() {
+            const device = getDeviceFromURL();
+            window.location.href = '/downloadExcel/' + encodeURIComponent(device);
+        }
+        
+        function clearLog() {
+            const device = getDeviceFromURL();
+            const password = getPasswordFromURL();
+            if (!confirm('Bạn có chắc muốn xóa log nhiệt độ?')) return;
+            fetch('/clearChartData', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({device: device, password: password || ''})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Đã xóa log!');
+                    document.getElementById('dataListContent').innerHTML = '<div style="color:#e0e0e0;text-align:center">Chưa có dữ liệu</div>';
+                } else alert('❌ Lỗi: ' + (data.message || ''));
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>
